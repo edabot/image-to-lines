@@ -10,6 +10,7 @@ def image_to_line
   image = shrink_and_blur(image)
   grayscale_values = get_grayscale_values(image)
   height_values = grayscale_to_height(grayscale_values)
+
   p height_values[0]
 end
 
@@ -57,4 +58,31 @@ def process_pixel(pixel_lightness)
   final_value.to_i
 end
 
-image_to_line
+def display
+  RVG::dpi = 72
+  array = [[[2,10], [60,100], [90, 30]],
+          [[2,10], [60,100], [90, 30]]]
+
+  rvg = RVG.new(5.in, 5.in).viewbox(0,0,360,360) do |canvas|
+    canvas.background_fill = 'black'
+
+    line = new_line(array.first.flatten)
+    canvas.use(line).translate(50,0)
+
+    line = new_line(array.last.flatten)
+    canvas.use(line).translate(50,100)
+
+  end
+
+  rvg.draw.write('display.gif')
+end
+
+def new_line(array)
+  RVG::Group.new do |line|
+    line.styles(:stroke=>'white', :stroke_width=>2,:fill=>'black')
+    line.polyline(array)
+  end
+end
+
+# image_to_line
+display
