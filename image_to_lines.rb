@@ -7,9 +7,11 @@ require 'byebug'
 
 def image_to_line
   @x_spacing = 10
-  @total_width = 680
-  @total_height = 720
+  @y_spacing = 10
+  @total_width = 640
+  @total_height = 640
   @base_noise = 0.03
+
   image = get_image
   image = shrink_and_blur(image)
   grayscale_values = get_grayscale_values(image)
@@ -74,10 +76,11 @@ end
 def display(array)
   rvg = RVG.new(@total_width,@total_height) do |canvas|
     canvas.background_fill = 'black'
-    margin = (@total_width - (array[0].length - 1) * @x_spacing) / 2
+    side_margin = (@total_width - (array[0].length - 1) * @x_spacing) / 2
+    bottom_margin = (array.length - 1) * @y_spacing + 60
     lines = make_lines(array)
     lines.each_with_index do |line, idx|
-      canvas.use(line).translate(margin, 10 * idx - 600)
+      canvas.use(line).translate(side_margin, @y_spacing * idx - bottom_margin)
     end
 
   end
