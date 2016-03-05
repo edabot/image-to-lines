@@ -6,12 +6,16 @@ require 'byebug'
 
 
 def image_to_line
+  @x_spacing = 10
+  @total_width = 680
+  @total_height = 720
+  @base_noise = 0.03
   image = get_image
   image = shrink_and_blur(image)
   grayscale_values = get_grayscale_values(image)
-  height_values = grayscale_to_height(grayscale_values)
+  coordinates = make_coordinates(grayscale_values)
 
-  p height_values[0]
+  display(coordinates)
 end
 
 def get_image
@@ -19,7 +23,7 @@ def get_image
 end
 
 def shrink_and_blur(image)
-  image.resize_to_fit(100).blur_image(radius=0.0, sigma=1.0)
+  image.resize_to_fit(50).blur_image(radius=0.0, sigma=1.0)
 end
 
 def write_with_suffix(image, suffix)
@@ -34,15 +38,16 @@ def get_grayscale_values(image)
   array
 end
 
-def grayscale_to_height(array)
+def make_coordinates(array)
   new_array = []
   array.each do |row|
-    new_array << process_row(row)
+    height_row = make_height_row(row)
+    new_array << add_x_values(height_row)
   end
-  new_array
+  new_array.reverse
 end
 
-def process_row(row)
+def make_height_row(row)
   new_row = []
     row.each do |pixel|
       new_row << process_pixel(pixel)
@@ -52,37 +57,53 @@ end
 
 def process_pixel(pixel_lightness)
   # debugger
-  pixel_darkness = 65535 - pixel_lightness
-  raw_value = 30 + rand(70)
-  final_value = raw_value * pixel_darkness.to_f / 65535
-  final_value.to_i
+  max_level = 65535
+  pixel_darkness = max_level - pixel_lightness
+  raw_value = 30 + rand(50)
+  final_value = raw_value * ((pixel_darkness.to_f / max_level) + @base_noise)
+  @total_height - final_value.to_i
 end
 
-def display
-  RVG::dpi = 72
-  array = [[[2,10], [60,100], [90, 30]],
-          [[2,10], [60,100], [90, 30]]]
+def add_x_values(row)
+  row.each_with_index do |y_value, idx|
+    row[idx] = [idx * @x_spacing, y_value]
+  end
+  row
+end
 
-  rvg = RVG.new(5.in, 5.in).viewbox(0,0,360,360) do |canvas|
+def display(array)
+  rvg = RVG.new(@total_width,@total_height) do |canvas|
     canvas.background_fill = 'black'
-
-    line = new_line(array.first.flatten)
-    canvas.use(line).translate(50,0)
-
-    line = new_line(array.last.flatten)
-    canvas.use(line).translate(50,100)
+    margin = (@total_width - (array[0].length - 1) * @x_spacing) / 2
+    lines = make_lines(array)
+    lines.each_with_index do |line, idx|
+      canvas.use(line).translate(margin, 10 * idx - 600)
+    end
 
   end
-
   rvg.draw.write('display.gif')
 end
 
-def new_line(array)
+def make_lines(line_data)
+  lines = []
+  line_data.each do |line|
+    lines << make_line(line.flatten)
+  end
+  lines
+end
+
+def make_line(array)
   RVG::Group.new do |line|
     line.styles(:stroke=>'white', :stroke_width=>2,:fill=>'black')
     line.polyline(array)
   end
 end
 
-# image_to_line
-display
+image_to_line
+
+# array = [[[2,10], [60,100], [90, 44]],
+#         [[2,23], [60,80], [90, 10]],
+#         [[2,54], [60,60], [90, 30]],
+#         [[2,65], [60,40], [90, 50]]
+#       ]
+# display(array)
