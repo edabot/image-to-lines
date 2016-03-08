@@ -4,20 +4,28 @@ include Magick
 
 require 'byebug'
 
-
 def image_to_line
   @x_spacing = 10
   @y_spacing = 10
   @total_width = 640
   @total_height = 640
   @base_noise = 0.03
+  @random_range = 20
+  @base_height = 30
+  @idx = 1
+  @image_count = 10
+  @file_name = ARGV[0][0..-5]
 
   image = get_image
   image = shrink_and_blur(image)
   grayscale_values = get_grayscale_values(image)
-  coordinates = make_coordinates(grayscale_values)
 
-  display(coordinates)
+  Dir.mkdir("images/processed/#{@file_name}") unless File.exists?("images/processed/#{@file_name}")
+
+  @image_count.times do |image_number|
+    coordinates = make_coordinates(grayscale_values)
+    make_image(coordinates, image_number)
+  end
 end
 
 def get_image
@@ -46,7 +54,7 @@ def make_coordinates(array)
     height_row = make_height_row(row)
     new_array << add_x_values(height_row)
   end
-  new_array.reverse
+  new_array
 end
 
 def make_height_row(row)
@@ -58,12 +66,11 @@ def make_height_row(row)
 end
 
 def process_pixel(pixel_lightness)
-  # debugger
   max_level = 65535
   pixel_darkness = max_level - pixel_lightness
-  raw_value = 30 + rand(50)
-  final_value = raw_value * ((pixel_darkness.to_f / max_level) + @base_noise)
-  @total_height - final_value.to_i
+  raw_value = @base_height + rand(@random_range)
+  height = raw_value * ((pixel_darkness.to_f / max_level) + @base_noise)
+  @total_height - height.to_i
 end
 
 def add_x_values(row)
@@ -73,7 +80,7 @@ def add_x_values(row)
   row
 end
 
-def display(array)
+def make_image(array, image_number)
   rvg = RVG.new(@total_width,@total_height) do |canvas|
     canvas.background_fill = 'black'
     side_margin = (@total_width - (array[0].length - 1) * @x_spacing) / 2
@@ -84,7 +91,7 @@ def display(array)
     end
 
   end
-  rvg.draw.write('display.gif')
+  rvg.draw.write("images/processed/#{@file_name}/#{@file_name}-#{image_number}.gif")
 end
 
 def make_lines(line_data)
@@ -103,10 +110,3 @@ def make_line(array)
 end
 
 image_to_line
-
-# array = [[[2,10], [60,100], [90, 44]],
-#         [[2,23], [60,80], [90, 10]],
-#         [[2,54], [60,60], [90, 30]],
-#         [[2,65], [60,40], [90, 50]]
-#       ]
-# display(array)
