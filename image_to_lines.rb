@@ -4,28 +4,30 @@ include Magick
 
 require 'byebug'
 
-def image_to_line
-  @x_spacing = 10
-  @y_spacing = 10
-  @total_width = 640
-  @total_height = 640
-  @base_noise = 0.03
-  @random_range = 20
-  @base_height = 30
-  @idx = 1
-  @image_count = 10
-  @file_name = ARGV[0][0..-5]
+@x_spacing = 10
+@y_spacing = 10
+@total_width = 640
+@total_height = 640
+@base_noise = 0.03
+@random_range = 20
+@base_height = 30
+@image_count = 10
+@file_name = ARGV[0][0..-5]
 
+def image_to_line
   image = get_image
   image = shrink_and_blur(image)
   grayscale_values = get_grayscale_values(image)
 
   Dir.mkdir("images/processed/#{@file_name}") unless File.exists?("images/processed/#{@file_name}")
+  @anim = ImageList.new
 
   @image_count.times do |image_number|
     coordinates = make_coordinates(grayscale_values)
     make_image(coordinates, image_number)
   end
+
+  @anim.write("images/processed/#{@file_name}/#{@file_name}-animated.gif")
 end
 
 def get_image
@@ -36,9 +38,9 @@ def shrink_and_blur(image)
   image.resize_to_fit(50).blur_image(radius=0.0, sigma=1.0)
 end
 
-def write_with_suffix(image, suffix)
-  image.write("images/processed/#{ARGV[0][0..-5]}-#{suffix}.jpg")
-end
+# def write_with_suffix(image, suffix)
+#   image.write("images/processed/#{ARGV[0][0..-5]}-#{suffix}.jpg")
+# end
 
 def get_grayscale_values(image)
   array = []
@@ -89,8 +91,8 @@ def make_image(array, image_number)
     lines.each_with_index do |line, idx|
       canvas.use(line).translate(side_margin, @y_spacing * idx - bottom_margin)
     end
-
   end
+  @anim << rvg.draw
   rvg.draw.write("images/processed/#{@file_name}/#{@file_name}-#{image_number}.gif")
 end
 
