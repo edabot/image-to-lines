@@ -9,8 +9,8 @@ require 'byebug'
 @total_width = 640
 @total_height = 640
 @base_noise = 0.03
-@random_range = 20
-@base_height = 30
+@random_range = 50
+@base_height = 20
 @image_count = 10
 @file_name = ARGV[0][0..-5]
 
@@ -59,12 +59,32 @@ def make_coordinates(array)
   new_array
 end
 
+def averaged_row(row)
+  averaged_row = row
+  (2..row.length-3).each do |index|
+    averaged_row[index] = average_of_five(row, index)
+  end
+  averaged_row
+end
+
+def average_of_three(row, index)
+  total = 0
+  (index - 1..index + 1).each { |x| total += row[x] }
+  total / 3
+end
+
+def average_of_five(row,index)
+  total = 0
+  (index-2..index+2).each { |x| total += row[x] }
+  total / 5
+end
+
 def make_height_row(row)
   new_row = []
     row.each do |pixel|
       new_row << process_pixel(pixel)
     end
-  new_row
+  averaged_row(new_row)
 end
 
 def process_pixel(pixel_lightness)
